@@ -1,0 +1,86 @@
+{% extends "layout.html" %}
+{% block title %}{{ journee.nom }}{% endblock %}
+
+{% block content %}
+<h2 class="text-white mb-3">{{ journee.nom }}</h2>
+
+<form method="post">
+<table class="table table-dark table-bordered align-middle">
+<thead>
+<tr>
+    <th>Match</th>
+    <th class="text-center">Pronostic</th>
+    <th class="text-center">Score réel</th>
+    <th class="text-center">Points</th>
+</tr>
+</thead>
+<tbody>
+
+{% for m in matchs %}
+<tr 
+    {% if m.points is not none %}
+        {% if m.points * x2_mult == 3 %}class="points-3"{% endif %}
+        {% if m.points * x2_mult == 2 %}class="points-2"{% endif %}
+        {% if m.points * x2_mult == 1 %}class="points-1"{% endif %}
+        {% if m.points * x2_mult == 0 %}class="points-0"{% endif %}
+    {% endif %}
+>
+    <td>{{ m.equipe_dom }} – {{ m.equipe_ext }}</td>
+
+    <td class="text-center">
+        <input type="number" min="0" name="dom_{{ m.match_id }}"
+               value="{{ m.prono_dom if m.prono_dom is not none }}"
+               {% if verrouille %}disabled{% endif %} style="width:60px;">
+        -
+        <input type="number" min="0" name="ext_{{ m.match_id }}"
+               value="{{ m.prono_ext if m.prono_ext is not none }}"
+               {% if verrouille %}disabled{% endif %} style="width:60px;">
+    </td>
+
+    <td class="text-center">
+        {% if m.real_dom is not none %}
+            {{ m.real_dom }} - {{ m.real_ext }}
+        {% else %}
+            —
+        {% endif %}
+    </td>
+
+    <td class="text-center">
+        {% if m.points is not none %}
+            <span class="fw-bold">{{ m.points * x2_mult }}</span>
+        {% else %}
+            —
+        {% endif %}
+    </td>
+</tr>
+{% endfor %}
+
+</tbody>
+</table>
+
+{% if not verrouille %}
+<button class="btn btn-success">💾 Valider mes pronostics</button>
+{% else %}
+<div class="alert alert-secondary">Pronostics verrouillés</div>
+{% endif %}
+</form>
+
+<hr>
+
+{% if not x2_current and not x2_other and not verrouille %}
+<form method="post" action="/x2/on/{{ journee.id }}">
+    <button class="btn btn-warning">🔥 Activer X2</button>
+</form>
+{% elif x2_current %}
+<form method="post" action="/x2/off/{{ journee.id }}">
+    <div class="alert alert-warning d-flex justify-content-between align-items-center">
+        Bonus X2 actif
+        <button class="btn btn-sm btn-dark">Retirer</button>
+    </div>
+</form>
+{% elif x2_other %}
+<div class="alert alert-secondary">
+    Bonus X2 déjà utilisé sur {{ x2_other.nom }}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,81 @@
+/* === Global === */
+body {
+  background: #0a0f24 url('/static/football-bg.jpg') center/cover no-repeat;
+  color: #f8f9fa;
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Header */
+header {
+  background: rgba(0,0,0,0.6);
+  padding: 15px;
+  text-align: center;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #ffd700; /* gold pour effet podium */
+}
+
+/* Tables */
+table {
+  background: rgba(255,255,255,0.85);
+  color: #000;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+table th {
+  background: #1e3a8a; /* bleu foot */
+  color: #fff;
+  text-transform: uppercase;
+}
+
+table td {
+  padding: 8px;
+  font-weight: 500;
+}
+
+/* Boutons */
+.btn-primary {
+  background: #1f8e1f; /* vert terrain */
+  border: none;
+  font-weight: bold;
+}
+
+.btn-primary:hover {
+  background: #166a16;
+}
+
+/* Alertes */
+.alert-danger {
+  background: #b00020;
+  color: #fff;
+}
+
+/* Formulaires */
+input, select {
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: #ffcc00; /* gold focus */
+}
+
+/* Highlight pronostics validés */
+.valid {
+  background-color: #d4edda !important; /* vert clair */
+}
+
+/* Classement */
+.classement-table {
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+/* Points couleurs avec priorité sur Bootstrap */
+.table tbody tr.points-3 td { background-color: #28a745 !important; color: #fff; } /* vert */
+.table tbody tr.points-2 td { background-color: #0d6efd !important; color: #fff; } /* bleu */
+.table tbody tr.points-1 td { background-color: #ffc107 !important; color: #000; } /* jaune */
+.table tbody tr.points-0 td { background-color: #dc3545 !important; color: #fff; } /* rouge */
+

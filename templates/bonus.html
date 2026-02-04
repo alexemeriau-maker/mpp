@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+{% block title %}Bonus{% endblock %}
+
+{% block content %}
+<h2 class="text-info mb-3">🎯 Pronostics bonus</h2>
+
+<form method="post">
+<div class="card bg-black border-info mb-3">
+    <div class="card-body">
+
+        <label class="mb-2 text-white">Meilleur buteur</label>
+        <input name="buteur"
+            class="form-control mb-3 text-white bg-dark border-secondary"
+            value="{{ bonus.meilleur_buteur if bonus }}">
+
+        <label class="mb-2 text-white">Champion</label>
+        <select name="champion"
+                class="form-control mb-3 text-white bg-dark border-secondary">
+            {% for equipe in [
+                "Chez Tati t'as tout",
+                "FC Sotocard",
+                "Champion d'Europe",
+                "Vallée de Kersaudy",
+                "L'ours pyrénéen",
+                "Moussetoir",
+                "Alex Périensse",
+                "OSS 117"
+            ] %}
+            <option {% if bonus and bonus.champion == equipe %}selected{% endif %}>
+                {{ equipe }}
+            </option>
+            {% endfor %}
+        </select>
+
+        {% if not verrouille %}
+        <button class="btn btn-info">💾 Valider bonus</button>
+        {% else %}
+        <div class="alert alert-secondary mt-2">Bonus verrouillé</div>
+        {% endif %}
+    </div>
+</div>
+</form>
+{% endblock %}
