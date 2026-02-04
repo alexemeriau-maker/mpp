@@ -6,7 +6,9 @@ from psycopg2.extras import execute_values
 # ------------------------
 # --- Connexion PostgreSQL ---
 # ------------------------
-DATABASE_URL = os.environ.get("DATABASE_URL")
+
+DATABASE_URL = "postgresql://fly-user:JCTDYtQS0rRthh4l5O01LrYT@pgbouncer.ey5qn0yd34808zmw.flympg.net:5432/fly-db"
+
 conn = psycopg2.connect(DATABASE_URL)
 c = conn.cursor()
 
@@ -165,17 +167,17 @@ matchs_aller = [
     (5, equipes[2], equipes[0]),
     (5, equipes[4], equipes[6]),
     (5, equipes[7], equipes[3]),
-    (5, équipes[5], équipes[1]),
+    (5, equipes[5], equipes[1]),
     # J6
-    (6, équipes[0], équipes[5]),
-    (6, équipes[1], équipes[7]),
-    (6, équipes[4], équipes[3]),
-    (6, équipes[6], équipes[2]),
+    (6, equipes[0], equipes[5]),
+    (6, equipes[1], equipes[7]),
+    (6, equipes[4], equipes[3]),
+    (6, equipes[6], equipes[2]),
     # J7
-    (7, équipes[2], équipes[4]),
-    (7, équipes[7], équipes[0]),
-    (7, équipes[5], équipes[6]),
-    (7, équipes[3], équipes[1])
+    (7, equipes[2], equipes[4]),
+    (7, equipes[7], equipes[0]),
+    (7, equipes[5], equipes[6]),
+    (7, equipes[3], equipes[1])
 ]
 
 # ------------------------
