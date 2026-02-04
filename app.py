@@ -3,7 +3,7 @@ import sqlite3
 from datetime import datetime
 from functools import wraps
 from mailer import send_mail
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
 app.secret_key = "mpp-secret-key"
@@ -32,6 +32,28 @@ def login_required(f):
 # -------------------
 # AUTH
 # -------------------
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        prenom = request.form["prenom"]
+        nom = request.form["nom"]
+        email = request.form["email"]
+        password = request.form["password"]
+
+        conn = db()
+        try:
+            conn.execute(
+                "INSERT INTO users (prenom, nom, email, password_hash) VALUES (?,?,?,?)",
+                (prenom, nom, email, generate_password_hash(password))
+            )
+            conn.commit()
+        except sqlite3.IntegrityError:
+            return render_template("register.html", error="Email déjà utilisé")
+
+        return redirect("/login")
+
+    return render_template("register.html")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
