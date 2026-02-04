@@ -265,43 +265,47 @@ def bonus():
 @app.route("/classement")
 @login_required
 def classement():
-    conn, cursor = db()
-    cursor.execute("""
-        SELECT
-            u.prenom || ' ' || u.nom AS joueur,
-            COALESCE(SUM(
-                CASE
-                    WHEN r.score_dom IS NULL THEN 0
-                    WHEN p.score_dom = r.score_dom AND p.score_ext = r.score_ext THEN 3
-                    WHEN (p.score_dom - p.score_ext) = (r.score_dom - r.score_ext) THEN 2
-                    WHEN (p.score_dom - p.score_ext) * (r.score_dom - r.score_ext) > 0
-                        OR (p.score_dom = p.score_ext AND r.score_dom = r.score_ext) THEN 1
-                    ELSE 0
-                END
-            ) * CASE WHEN x.user_id IS NOT NULL THEN 2 ELSE 1 END, 0) AS points_matchs,
-            COALESCE(b.points, 0) AS points_bonus,
-            COALESCE(SUM(
-                CASE
-                    WHEN r.score_dom IS NULL THEN 0
-                    WHEN p.score_dom = r.score_dom AND p.score_ext = r.score_ext THEN 3
-                    WHEN (p.score_dom - p.score_ext) = (r.score_dom - r.score_ext) THEN 2
-                    WHEN (p.score_dom - p.score_ext) * (r.score_dom - r.score_ext) > 0
-                        OR (p.score_dom = p.score_ext AND r.score_dom = r.score_ext) THEN 1
-                    ELSE 0
-                END
-            ) * CASE WHEN x.user_id IS NOT NULL THEN 2 ELSE 1 END, 0) + COALESCE(b.points, 0) AS total
-        FROM users u
-        LEFT JOIN pronos p ON u.id = p.user_id
-        LEFT JOIN results r ON p.match_id = r.match_id
-        LEFT JOIN matchs m ON p.match_id = m.id
-        LEFT JOIN x2 x ON x.user_id = u.id AND x.journee_id = m.journee_id
-        LEFT JOIN bonus b ON b.user_id = u.id
-        GROUP BY u.id, u.prenom, u.nom, b.points
-        ORDER BY total DESC
-    """)
-    rows = cursor.fetchall()
-    conn.close()
-    return render_template("classement.html", rows=rows)
+    try:
+        conn, cursor = db()
+        cursor.execute("""
+            SELECT
+                u.prenom || ' ' || u.nom AS joueur,
+                COALESCE(SUM(
+                    CASE
+                        WHEN r.score_dom IS NULL THEN 0
+                        WHEN p.score_dom = r.score_dom AND p.score_ext = r.score_ext THEN 3
+                        WHEN (p.score_dom - p.score_ext) = (r.score_dom - r.score_ext) THEN 2
+                        WHEN (p.score_dom - p.score_ext) * (r.score_dom - r.score_ext) > 0
+                            OR (p.score_dom = p.score_ext AND r.score_dom = r.score_ext) THEN 1
+                        ELSE 0
+                    END
+                ) * CASE WHEN x.user_id IS NOT NULL THEN 2 ELSE 1 END, 0) AS points_matchs,
+                COALESCE(b.points, 0) AS points_bonus,
+                COALESCE(SUM(
+                    CASE
+                        WHEN r.score_dom IS NULL THEN 0
+                        WHEN p.score_dom = r.score_dom AND p.score_ext = r.score_ext THEN 3
+                        WHEN (p.score_dom - p.score_ext) = (r.score_dom - r.score_ext) THEN 2
+                        WHEN (p.score_dom - p.score_ext) * (r.score_dom - r.score_ext) > 0
+                            OR (p.score_dom = p.score_ext AND r.score_dom = r.score_ext) THEN 1
+                        ELSE 0
+                    END
+                ) * CASE WHEN x.user_id IS NOT NULL THEN 2 ELSE 1 END, 0) + COALESCE(b.points, 0) AS total
+            FROM users u
+            LEFT JOIN pronos p ON u.id = p.user_id
+            LEFT JOIN results r ON p.match_id = r.match_id
+            LEFT JOIN matchs m ON p.match_id = m.id
+            LEFT JOIN x2 x ON x.user_id = u.id AND x.journee_id = m.journee_id
+            LEFT JOIN bonus b ON b.user_id = u.id
+            GROUP BY u.id, u.prenom, u.nom, b.points
+            ORDER BY total DESC
+        """)
+        rows = cursor.fetchall()
+        conn.close()
+        return render_template("classement.html", rows=rows)
+    except Exception as e:
+            import traceback
+            return f"<pre>{traceback.format_exc()}</pre>"
 
 # -------------------
 # RUN
