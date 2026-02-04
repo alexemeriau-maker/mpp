@@ -1,21 +1,23 @@
-import sqlite3
+import os
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
-DB = "mpp.db"
+# ------------------------
+# --- Connexion PostgreSQL ---
+# ------------------------
+DATABASE_URL = os.environ.get("DATABASE_URL")
+conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+c = conn.cursor()
 
 def show_matchs(journee_id):
     """Affiche les matchs d'une journée"""
-    conn = sqlite3.connect(DB)
-    conn.row_factory = sqlite3.Row
-    c = conn.cursor()
-
-    matchs = c.execute("""
+    c.execute("""
         SELECT id, equipe_dom, equipe_ext
         FROM matchs
-        WHERE journee_id=?
+        WHERE journee_id=%s
         ORDER BY id
-    """, (journee_id,)).fetchall()
-
-    conn.close()
+    """, (journee_id,))
+    matchs = c.fetchall()
 
     if not matchs:
         print("❌ Aucun match pour cette journée")
@@ -26,23 +28,19 @@ def show_matchs(journee_id):
         print(f"ID {m['id']} : {m['equipe_dom']} vs {m['equipe_ext']}")
     return matchs
 
-
 def set_results(journee_id, results_dict):
-    """Insère les résultats réels"""
-    conn = sqlite3.connect(DB)
-    c = conn.cursor()
-
+    """Insère ou met à jour les résultats réels"""
     for match_id, (sd, se) in results_dict.items():
         c.execute("""
-            INSERT OR REPLACE INTO results (match_id, score_dom, score_ext)
-            VALUES (?, ?, ?)
+            INSERT INTO results (match_id, score_dom, score_ext)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (match_id)
+            DO UPDATE SET score_dom = EXCLUDED.score_dom,
+                          score_ext = EXCLUDED.score_ext
         """, (match_id, sd, se))
 
     conn.commit()
-    conn.close()
-
     print(f"\n✅ Résultats enregistrés pour la J{journee_id}")
-
 
 def main():
     # 🔴 À MODIFIER ICI
@@ -54,15 +52,11 @@ def main():
 
     # 🧪 RÉSULTATS (exemple)
     # ➜ match_id : (score_dom, score_ext)
-    results = {
-        matchs[0]["id"]: (0, 0),
-        matchs[1]["id"]: (0, 0),
-        matchs[2]["id"]: (0, 0),
-        matchs[3]["id"]: (0, 0),
-    }
-
+    results = { matchs[0]["id"]: (0, 0),
+                matchs[1]["id"]: (0, 0), 
+                matchs[2]["id"]: (0, 0), 
+                matchs[3]["id"]: (0, 0) }
     set_results(journee_id, results)
-
 
 if __name__ == "__main__":
     main()

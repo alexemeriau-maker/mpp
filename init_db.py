@@ -1,23 +1,28 @@
-import sqlite3
+import os
+import psycopg2
 from werkzeug.security import generate_password_hash
+from psycopg2.extras import execute_values
 
-DB = "mpp.db"
-conn = sqlite3.connect(DB)
+# ------------------------
+# --- Connexion PostgreSQL ---
+# ------------------------
+DATABASE_URL = os.environ.get("DATABASE_URL")
+conn = psycopg2.connect(DATABASE_URL)
 c = conn.cursor()
 
 # ------------------------
 # --- Supprimer anciennes tables ---
 # ------------------------
-tables = ["users", "journees", "matchs", "pronos", "x2", "bonus", "results"]
+tables = ["pronos", "x2", "bonus", "results", "matchs", "journees", "users"]
 for t in tables:
-    c.execute(f"DROP TABLE IF EXISTS {t}")
+    c.execute(f"DROP TABLE IF EXISTS {t} CASCADE")
 
 # ------------------------
 # --- Création des tables ---
 # ------------------------
 c.execute("""
 CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     prenom TEXT,
     nom TEXT,
     email TEXT UNIQUE,
@@ -28,10 +33,10 @@ CREATE TABLE users (
 
 c.execute("""
 CREATE TABLE journees (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     nom TEXT,
-    date_debut TEXT,
-    verrou TEXT,
+    date_debut TIMESTAMP,
+    verrou TIMESTAMP,
     mail_rappel_envoye INTEGER DEFAULT 0,
     mail_verrou_envoye INTEGER DEFAULT 0
 )
@@ -39,8 +44,8 @@ CREATE TABLE journees (
 
 c.execute("""
 CREATE TABLE matchs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    journee_id INTEGER,
+    id SERIAL PRIMARY KEY,
+    journee_id INTEGER REFERENCES journees(id) ON DELETE CASCADE,
     equipe_dom TEXT,
     equipe_ext TEXT
 )
@@ -48,8 +53,8 @@ CREATE TABLE matchs (
 
 c.execute("""
 CREATE TABLE pronos (
-    user_id INTEGER,
-    match_id INTEGER,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    match_id INTEGER REFERENCES matchs(id) ON DELETE CASCADE,
     score_dom INTEGER,
     score_ext INTEGER,
     PRIMARY KEY(user_id, match_id)
@@ -58,15 +63,15 @@ CREATE TABLE pronos (
 
 c.execute("""
 CREATE TABLE x2 (
-    user_id INTEGER,
-    journee_id INTEGER,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    journee_id INTEGER REFERENCES journees(id) ON DELETE CASCADE,
     PRIMARY KEY(user_id, journee_id)
 )
 """)
 
 c.execute("""
 CREATE TABLE bonus (
-    user_id INTEGER PRIMARY KEY,
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     meilleur_buteur TEXT,
     champion TEXT,
     points INTEGER DEFAULT 0
@@ -75,24 +80,11 @@ CREATE TABLE bonus (
 
 c.execute("""
 CREATE TABLE results (
-    match_id INTEGER PRIMARY KEY,
+    match_id INTEGER PRIMARY KEY REFERENCES matchs(id) ON DELETE CASCADE,
     score_dom INTEGER,
     score_ext INTEGER
 )
 """)
-
-# Supprimer les données existantes
-c.execute("DELETE FROM pronos")
-c.execute("DELETE FROM x2")
-c.execute("DELETE FROM bonus")
-c.execute("DELETE FROM results")
-c.execute("DELETE FROM matchs")
-c.execute("DELETE FROM journees")
-c.execute("DELETE FROM users")
-
-# Réinitialiser les séquences
-for table in ["users", "matchs", "pronos", "journees", "bonus", "x2", "results"]:
-    c.execute(f"DELETE FROM sqlite_sequence WHERE name='{table}'")
 
 # ------------------------
 # --- Utilisateurs test ---
@@ -100,7 +92,10 @@ for table in ["users", "matchs", "pronos", "journees", "bonus", "x2", "results"]
 users = [
     ("Alexis", "Emeriau", "alex.emeriau@gmail.com", generate_password_hash("Abline"))
 ]
-c.executemany("INSERT INTO users (prenom, nom, email, password_hash) VALUES (?,?,?,?)", users)
+execute_values(c,
+    "INSERT INTO users (prenom, nom, email, password_hash) VALUES %s",
+    users
+)
 
 # ------------------------
 # --- Journées ---
@@ -125,7 +120,7 @@ journees = [
 for i, j in enumerate(journees):
     c.execute("""
         INSERT INTO journees (id, nom, date_debut, verrou, mail_rappel_envoye, mail_verrou_envoye)
-        VALUES (?,?,?,?,0,0)
+        VALUES (%s, %s, %s, %s, 0, 0)
     """, (i+1, j[0], j[1], j[2]))
 
 # ------------------------
@@ -170,27 +165,29 @@ matchs_aller = [
     (5, equipes[2], equipes[0]),
     (5, equipes[4], equipes[6]),
     (5, equipes[7], equipes[3]),
-    (5, equipes[5], equipes[1]),
+    (5, équipes[5], équipes[1]),
     # J6
-    (6, equipes[0], equipes[5]),
-    (6, equipes[1], equipes[7]),
-    (6, equipes[4], equipes[3]),
-    (6, equipes[6], equipes[2]),
+    (6, équipes[0], équipes[5]),
+    (6, équipes[1], équipes[7]),
+    (6, équipes[4], équipes[3]),
+    (6, équipes[6], équipes[2]),
     # J7
-    (7, equipes[2], equipes[4]),
-    (7, equipes[7], equipes[0]),
-    (7, equipes[5], equipes[6]),
-    (7, equipes[3], equipes[1])
+    (7, équipes[2], équipes[4]),
+    (7, équipes[7], équipes[0]),
+    (7, équipes[5], équipes[6]),
+    (7, équipes[3], équipes[1])
 ]
 
 # ------------------------
-# --- Matchs retour (inverse domicile/extérieur) ---
+# --- Matchs retour ---
 # ------------------------
 matchs_retour = [(m[0]+7, m[2], m[1]) for m in matchs_aller]
-
-# Tous les matchs
 all_matchs = matchs_aller + matchs_retour
-c.executemany("INSERT INTO matchs (journee_id, equipe_dom, equipe_ext) VALUES (?,?,?)", all_matchs)
+
+execute_values(c,
+    "INSERT INTO matchs (journee_id, equipe_dom, equipe_ext) VALUES %s",
+    all_matchs
+)
 
 # ------------------------
 # --- Commit & Close ---
@@ -198,4 +195,4 @@ c.executemany("INSERT INTO matchs (journee_id, equipe_dom, equipe_ext) VALUES (?
 conn.commit()
 conn.close()
 
-print("Base mpp.db créée avec 14 journées et 4 matchs par journée (aller-retour) !")
+print("Base PostgreSQL Fly.io initialisée avec 14 journées et 4 matchs par journée (aller-retour) !")
