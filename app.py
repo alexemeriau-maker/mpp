@@ -296,7 +296,7 @@ def classement():
         LEFT JOIN matchs m ON p.match_id = m.id
         LEFT JOIN x2 x ON x.user_id = u.id AND x.journee_id = m.journee_id
         LEFT JOIN bonus b ON b.user_id = u.id
-        GROUP BY u.id
+        GROUP BY u.id, u.prenom, u.nom, b.points
         ORDER BY total DESC
     """)
     rows = cursor.fetchall()
